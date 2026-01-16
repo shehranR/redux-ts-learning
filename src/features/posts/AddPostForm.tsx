@@ -1,13 +1,14 @@
 import React from 'react'
 import { nanoid } from '@reduxjs/toolkit'
 
-import { useAppDispatch } from '@/app/hooks'
+import { useAppDispatch, useAppSelector } from '@/app/hooks'
 
-import {type Post, postAdded} from '@/features/posts/postsSlice'
+import { type Post, postAdded } from '@/features/posts/postsSlice'
+import { selectCurrentUsername } from '../auth/authSlice'
 
 interface AddPostFormFields extends HTMLFormControlsCollection {
     postTitle: HTMLInputElement,
-    postContent: HTMLTextAreaElement
+    postContent: HTMLTextAreaElement,
 }
 
 interface AddPostFormElements extends HTMLFormElement {
@@ -16,17 +17,13 @@ interface AddPostFormElements extends HTMLFormElement {
 
 export const AddPostForm = () => {
     const dispatch = useAppDispatch();
+    const userId = useAppSelector(selectCurrentUsername)!
 
     const handleSubmit = (e: React.FormEvent<AddPostFormElements>) => {
         e.preventDefault()
 
         const { elements } = e.currentTarget;
-        const payload: Post = {
-            id: nanoid(), 
-            title: elements.postTitle.value,
-            content: elements.postContent.value
-        }
-        dispatch(postAdded(payload));
+        dispatch(postAdded(elements.postTitle.value, elements.postContent.value, userId));
 
         e.currentTarget.reset();
     }
