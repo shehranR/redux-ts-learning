@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { nanoid } from '@reduxjs/toolkit'
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 
-import { type Post, postAdded } from '@/features/posts/postsSlice'
+import { addNewPost, type Post  } from '@/features/posts/postsSlice'
 import { selectCurrentUsername } from '../auth/authSlice'
 
 interface AddPostFormFields extends HTMLFormControlsCollection {
@@ -16,16 +16,27 @@ interface AddPostFormElements extends HTMLFormElement {
 }
 
 export const AddPostForm = () => {
+    const [addRequestStatus, setAddRequestStatus] = useState<'idle' | 'pending'>('idle')
     const dispatch = useAppDispatch();
     const userId = useAppSelector(selectCurrentUsername)!
 
-    const handleSubmit = (e: React.FormEvent<AddPostFormElements>) => {
+    const handleSubmit = async (e: React.FormEvent<AddPostFormElements>) => {
         e.preventDefault()
 
         const { elements } = e.currentTarget;
-        dispatch(postAdded(elements.postTitle.value, elements.postContent.value, userId));
 
-        e.currentTarget.reset();
+        const form = e.currentTarget
+
+        try {
+            setAddRequestStatus('pending')
+            await dispatch(addNewPost({title: elements.postTitle.value, content: elements.postContent.value, user: userId})).unwrap()
+            
+            form.reset()
+        } catch(err) {
+            console.error(err);
+        } finally {
+            setAddRequestStatus('idle')
+        }
     }
 
     return (
