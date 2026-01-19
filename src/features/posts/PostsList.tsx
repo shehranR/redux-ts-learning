@@ -1,17 +1,20 @@
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { Link } from "react-router-dom";
-import { fetchPosts, type Post, selectAllPosts, selectPostsError, selectPostsStatus } from "./postsSlice";
+import { fetchPosts, type Post, selectAllPosts, selectPostById, selectPostIds, selectPostsError, selectPostsStatus } from "./postsSlice";
 import { ReactionButtons } from "./ReactionButtons";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { PostAuthor } from "./PostAuthor";
 import { TimeAgo } from "@/components/TimeAgo";
 import { Spinner } from "@/components/Spinner";
 
 interface PostExcerptProps {
-    post: Post
+    postId: string
 }
 
-function PostExcerpt({ post }: PostExcerptProps) {
+type Elemtype = (arg: PostExcerptProps) => React.ReactNode
+
+let PostExcerpt: Elemtype = ({ postId }: PostExcerptProps) => {
+    const post = useAppSelector((state) => selectPostById(state, postId))
     return (
         <article className="post-excerpt" key={post.id}>
             <h3>
@@ -26,8 +29,12 @@ function PostExcerpt({ post }: PostExcerptProps) {
         </article>
     )
 }
+
+PostExcerpt = React.memo(PostExcerpt) 
+
 export const PostsList = () => {
     const dispatch = useAppDispatch()
+    const orderedPostIds = useAppSelector(selectPostIds)
     const posts = useAppSelector(selectAllPosts)
     const postStatus = useAppSelector(selectPostsStatus)
     const postsError = useAppSelector(selectPostsError)
@@ -43,12 +50,8 @@ export const PostsList = () => {
     if (postStatus === 'pending') {
         content = <Spinner text="Loading..." />
     } else if (postStatus === 'succeeded') {
-        const orderedPosts = posts
-            .slice()
-            .sort((a, b) => b.date.localeCompare(a.date))
-
-        content = orderedPosts.map(post => (
-            <PostExcerpt key={post.id} post={post} />
+        content = orderedPostIds.map(postId => (
+            <PostExcerpt key={postId} postId={postId} />
         ))
     } else if (postStatus === 'failed') {
         content = <div>{postsError}</div>
