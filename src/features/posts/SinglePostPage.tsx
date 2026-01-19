@@ -5,14 +5,16 @@ import { selectCurrentUsername } from "../auth/authSlice";
 import { PostAuthor } from "./PostAuthor";
 import { TimeAgo } from "@/components/TimeAgo";
 import { ReactionButtons } from "./ReactionButtons";
+import { useGetPostQuery } from "@/api/apiSlice";
+import { Spinner } from "@/components/Spinner";
 
 
 export const SinglePostPage = () => {
     const { postId } = useParams();
 
-    const post = useAppSelector((state) => selectPostById(state, postId!))
     const currentUsername = useAppSelector(selectCurrentUsername)
 
+    const { data: post, isFetching, isSuccess } = useGetPostQuery(postId!)
     if (!post) {
         return (
             <section>
@@ -20,25 +22,29 @@ export const SinglePostPage = () => {
             </section>
         )
     }
-
+    let content: React.ReactNode
     const canEdit = currentUsername === post.user
-
-    return (
-        <section>
-            <article className="post">
-                <h2>{post.title}</h2>
-                <div>
-                    <PostAuthor userId={post.user} />
-                    <TimeAgo timestamp={post.date} />
-                </div>
-                <p className="post-content">{post.content}</p>
-                <ReactionButtons post={post} />
-                {canEdit && (
-                    <Link to={`/editPost/${post.id}`} className="button">
-                        Edit Post
-                    </Link>
-                )}
-            </article>
-        </section>
-    )
+    if (isFetching) {
+        content = <Spinner text="Loading..." />
+    } else if (isSuccess) {
+        content = (
+            <section>
+                <article className="post">
+                    <h2>{post.title}</h2>
+                    <div>
+                        <PostAuthor userId={post.user} />
+                        <TimeAgo timestamp={post.date} />
+                    </div>
+                    <p className="post-content">{post.content}</p>
+                    <ReactionButtons post={post} />
+                    {canEdit && (
+                        <Link to={`/editPost/${post.id}`} className="button">
+                            Edit Post
+                        </Link>
+                    )}
+                </article>
+            </section>
+        )
+    }
+    return <section>{content}</section>
 }
